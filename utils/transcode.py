@@ -125,12 +125,16 @@ TRANSCODERS = {
 }
 
 
-def transcode(path: Path, config, debug=False) -> Path:
+def transcode(path: Path, config, debug=False, t=None) -> Path:
 	"""Transcode media into the codec specified in the config file.
 	Codecs not listed in `EXTENSIONS` will be ignored.
 	"""
-	
-	start = time.time()
+
+	# stupid solution for keeping track of start time when recursing
+	t = start is None
+	if t:
+		start = time.time()
+		
 
 	path = Path(path)
 
@@ -140,7 +144,7 @@ def transcode(path: Path, config, debug=False) -> Path:
 				try:
 					transcode(file_path, config, debug=debug)
 				except Exception as e:
-					logger.warning(f"Skipping corrupted/unrecognised file {file_path}: {e}")
+					logger.warning(f"Skipping unrecognised file {file_path}: {e}")
 					"""TODO: decide to skip or delete the file"""
 					# path.unlink(missing_ok=True)
 		return path
@@ -165,12 +169,13 @@ def transcode(path: Path, config, debug=False) -> Path:
 	try:
 		return handler(path, config["transcoding"]["audio"], debug=debug)
 	except Exception as e:
-		logger.warning(f"Skipping corrupted/unrecognised file {path}: {e}")
+		logger.warning(f"Skipping unrecognised file {path}: {e}")
 		"""TODO: decide to skip or delete the file"""
 		# path.unlink(missing_ok=True)
 		return path
 	
 	finally:
-		logger.info(f"Transcoding completed ({time.time() - start:.2f}s)")
+		if t:
+			logger.info(f"Transcoding completed ({time.time() - start:.2f}s)")
 
 
