@@ -49,7 +49,7 @@ def remove_original(original: Path, new: Path):
 
 
 
-def transcode_opus(path: Path, config, debug=False):
+def transcode_opus(path: Path, config):
 	"""Transcode audio into Opus with FFmpeg.
 	Gets parameters from the config file,
 	and removes original file after transcoding.
@@ -74,19 +74,13 @@ def transcode_opus(path: Path, config, debug=False):
 		str(output)
 	]
 
-	subprocess.run(
-		cmd,
-		check=True,
-		stdout=None if debug else subprocess.DEVNULL,
-		stderr=None if debug else subprocess.DEVNULL
-	)
-	
+	subprocess.run(cmd, check=True)
 	remove_original(path, output)
 	return output
 
 
 
-def transcode_flac(path: Path, config, debug=False):
+def transcode_flac(path: Path, config):
 	"""Transcode audio into FLAC with FFmpeg.
 	Gets parameters from the config file,
 	and removes original file after transcoding.
@@ -108,13 +102,7 @@ def transcode_flac(path: Path, config, debug=False):
 		str(output)
 	]
 
-	subprocess.run(
-		cmd,
-		check=True,
-		stdout=None if debug else subprocess.DEVNULL,
-		stderr=None if debug else subprocess.DEVNULL
-	)
-
+	subprocess.run(cmd, check=True)
 	remove_original(path, output)
 	return output
 
@@ -125,16 +113,10 @@ TRANSCODERS = {
 }
 
 
-def transcode(path: Path, config, debug=False, t=None) -> Path:
+def _transcode(path: Path, config) -> Path:
 	"""Transcode media into the codec specified in the config file.
 	Codecs not listed in `EXTENSIONS` will be ignored.
 	"""
-
-	# stupid solution for keeping track of start time when recursing
-	t = start is None
-	if t:
-		start = time.time()
-		
 
 	path = Path(path)
 
@@ -142,14 +124,11 @@ def transcode(path: Path, config, debug=False, t=None) -> Path:
 		for file_path in path.rglob("*"):
 			if file_path.is_file():
 				try:
-					transcode(file_path, config, debug=debug)
+					_transcode(file_path, config)
 				except Exception as e:
 					logger.warning(f"Skipping unrecognised file {file_path}: {e}")
 					"""TODO: decide to skip or delete the file"""
 					# path.unlink(missing_ok=True)
-		return path
-
-	if not config["transcoding"]["enabled"]:
 		return path
 
 	ext = path.suffix.lower()
@@ -167,15 +146,24 @@ def transcode(path: Path, config, debug=False, t=None) -> Path:
 		raise ValueError(f"unsupported codec: {codec}")
 
 	try:
-		return handler(path, config["transcoding"]["audio"], debug=debug)
+		return handler(path, config["transcoding"]["audio"])
 	except Exception as e:
 		logger.warning(f"Skipping unrecognised file {path}: {e}")
 		"""TODO: decide to skip or delete the file"""
 		# path.unlink(missing_ok=True)
 		return path
-	
-	finally:
-		if t:
+
+
+
+def transcode(path, config):
+	tc = config.get("transcoding", {})
+	if tc.get("enabled", False):
+		logger.info("Transcoding enabled")
+		start = time.time()
+		try:
+			_transcode(path, config)
 			logger.info(f"Transcoding completed ({time.time() - start:.2f}s)")
-
-
+		except Exception as e:
+			logger.error(f"Transcoding failed: {e}")
+	else:
+		logger.info("Transcoding disabled")
