@@ -138,11 +138,9 @@ if __name__ == "__main__":
 		logger.info("Speech removal disabled")
 	
 	
-	start = time.time()
 	
 	transcode(data_dir, config)
-	logger.info(f"Transcoding completed ({time.time() - start:.2f}s)")
-	
+
 
 	# start web server if audiograbd was run with --serve-port <port> 
 	if args.serve_port:
