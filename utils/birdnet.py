@@ -1,3 +1,4 @@
+import subprocess
 
 # uv run birdnet-analyze input/ -o output/
 
