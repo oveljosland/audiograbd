@@ -180,5 +180,9 @@ def transfer_from_all(dst, copy=False):
 
 		moved.extend(transfer(mount_points, dst, copy=copy))
 
-	logger.info(f"Moved {len(moved)} files to: {dst}")
+	if copy:
+		logger.info(f"Copied {len(moved)} files")
+	else:
+		logger.info(f"Moved {len(moved)} files")
+		
 	return moved
