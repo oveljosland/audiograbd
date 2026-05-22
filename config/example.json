@@ -1,17 +1,13 @@
 {	
-	"project_name": "devgrab",
+	"project_name": "test",
 	"date_time_format": "%Y%m%d-%H%M%S",
 
 	"transcoding": {
 		"enabled": true,
 
 		"audio": {
-			"codec": "flac",
-			"bitrate_kbps": 24,
-			"sample_rate": 16000
-		},
-
-		"skip_already_compressed": true
+			"codec": "flac"
+		}
 	},
 
 	"speech-removal": {
@@ -19,7 +15,7 @@
 	},
 
 	"birdnet": {
-		"enabled": false
+		"enabled": true
 	},
 
 	"storage": {
