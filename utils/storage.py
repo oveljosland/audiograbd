@@ -3,6 +3,7 @@ from pathlib import Path
 from google.cloud.storage import Client, transfer_manager
 import subprocess
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -64,9 +65,35 @@ class Sigma2Provider(StorageProvider):
 
 	def upload(self, source_directory, username, port=12 ):
 		output = subprocess.run(["scp", "-P", str(port), source_directory,
-		username + "@login.nird.sigma2.no:folder/"], check=True, capture_output=True) #use -P12 port 12 to avoid firewall at nird (or something)
+		username + "@login.nird.sigma2.no:folder/"], check=True, capture_output=True)
 		if output.returncode != 0:
-			#print("Failed to upload to NIRD. SSH ERROR:", output.returncode)
 			logger.error(f"Failed to upload to NIRD. SSH ERROR: {output.returncode}")
 		else:
 			logger.info("Successfully uploaded to NIRD.")
+
+
+
+
+
+def upload(directory, config) -> None:
+	storage = config.get('storage', {})
+	provider = storage.get('provider')
+	start = time.time()
+	if provider == "gcs":
+			gcs_config = storage.get('gcs', {})
+			bucket_name = gcs_config.get('bucket_name')
+			if bucket_name is None:
+				logger.error("GCS bucket name missing from config")
+			else:
+				gcs = GCSProvider(bucket_name)
+				gcs.upload(directory)
+		
+	elif provider == "sigma2":
+		username = storage.get('sigma2', {}).get('username')
+		port = storage.get('sigma2', {}).get('port')
+		sigma2 = Sigma2Provider()
+		sigma2.upload(directory)
+	else:
+		logger.warning("No valid storage provider configured, skipping upload")
+
+	logger.info(f"Upload completed ({time.time() - start:.2f}s)")

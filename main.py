@@ -21,7 +21,7 @@ from utils.wakealarm import set_wakealarm, disable_wakealarm
 from utils.device import transfer_from_all
 from utils.transcode import transcode
 from utils.config import load_config, load_backup
-from utils.storage import GCSProvider, Sigma2Provider
+from utils.storage import GCSProvider, Sigma2Provider, upload
 from utils.silero import detect_and_mute
 from utils.server import serve
 from utils.birdnet import birdnet_analyse
@@ -60,6 +60,7 @@ def create_upload_dir(config):
 	base = Path("/tmp") / f"{name}-{date}-{str(uuid.uuid4())[:8]}"
 	(base / "data").mkdir(parents=True, exist_ok=True)
 	(base / "logs").mkdir(parents=True, exist_ok=True)
+	(base / "results").mkdir(parents=True, exist_ok=True)
 	logger.info(f"Created upload directory at {base}")
 	return base
 
@@ -83,7 +84,7 @@ if __name__ == "__main__":
 
 	try:
 		#config = load_config()
-		config = load_backup()
+		config = load_backup() # load the config in this repo
 		
 	except RuntimeError as e:
 		logger.error(f"Failed to load config: {e}")
@@ -104,8 +105,8 @@ if __name__ == "__main__":
 
 	try:
 		start = time.time()
-		moved = transfer_from_all(data_dir, copy=True)
-		logger.info(f"Offloaded {len(moved)} files in {time.time() - offload_start:.2f} seconds")
+		moved = transfer_from_all(data_dir, copy=True) # copy=False when deployed
+		logger.info(f"Offloaded completed ({time.time() - start:.2f}s)")
 	except RuntimeError as e:
 		logger.error(f"Failed transfer to {upload_dir}: {e}")
 
@@ -157,29 +158,9 @@ if __name__ == "__main__":
 			logger.info("Stopping web server...")
 
 
-
-	storage = config.get('storage', {})
-	provider = storage.get('provider')
-
-	upload_start = time.time()
+	upload(upload_dir, config)
 	
-	if provider == "gcs":
-		gcs_config = storage.get('gcs', {})
-		bucket_name = gcs_config.get('bucket_name')
-		if bucket_name is None:
-			logger.error("GCS bucket name missing from config")
-		else:
-			gcs = GCSProvider(bucket_name)
-			gcs.upload(upload_dir)
 	
-	elif provider == "sigma2":
-		username = storage.get('sigma2', {}).get('username')
-		port = storage.get('sigma2', {}).get('port')
-		sigma2 = Sigma2Provider()
-	else:
-		logger.warning("No valid storage provider configured, skipping upload")
-
-	logger.info(f"Upload completed ({time.time() - upload_start:.2f}s)")
 	
 	scheduler = config.get('scheduler', {})
 	if scheduler.get('enabled'):
