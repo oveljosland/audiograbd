@@ -1,4 +1,5 @@
 import os
+import time
 import subprocess
 import logging
 
@@ -6,6 +7,19 @@ logger = logging.getLogger(__name__)
 
 
 KERNEL_INFO_RTC = '/proc/driver/rtc'
+
+
+# only used for debugging
+def print_kernel_info() -> None:
+	"""Print RTC kernel info."""
+	output = subprocess.run([
+		"cat", KERNEL_INFO_RTC
+		],
+		capture_output=True,
+		text=True
+	)
+	logger.debug(f"RTC kernel info: {output.stdout}")
+
 
 
 def alarm_irq_enabled() -> bool:
@@ -52,13 +66,31 @@ def disable_wakealarm() -> None:
 
 
 
-# only used for debugging
-def print_kernel_info() -> None:
-	"""Print RTC kernel info."""
-	output = subprocess.run([
-		"cat", KERNEL_INFO_RTC
-		],
-		capture_output=True,
-		text=True
-	)
-	logger.debug(f"RTC kernel info: {output.stdout}")
+def halt():
+	"""Tell the OS to halt the system.
+	The `POWER_OFF_ON_HALT` EEPROM flag must be set to `1`.
+	"""
+	try:
+		subprocess.run(["systemctl", "halt"], check=True)
+	except Exception as e:
+		logger.error(f"failed to halt: {e}")
+
+
+
+def schedule_wakealarm(config, start_time):
+	scheduler = config.get('scheduler', {})
+	if scheduler.get('enabled'):
+		interval = scheduler.get('interval_minutes')
+		if interval is None or interval < 0:
+			logger.warning(f"Invalid wake interval ({interval})")
+		else:
+			logger.info(f"Next wake alarm scheduled in {interval} minute(s)")
+			set_wakealarm(interval)
+
+			# time to die
+			logger.info(f"Halting (uptime {time.time() - start_time:.2f}s)")
+			#halt()
+			exit(0)
+
+
+
