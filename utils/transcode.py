@@ -1,5 +1,6 @@
-import subprocess
+import time
 import logging
+import subprocess
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -128,6 +129,9 @@ def transcode(path: Path, config, debug=False) -> Path:
 	"""Transcode media into the codec specified in the config file.
 	Codecs not listed in `EXTENSIONS` will be ignored.
 	"""
+	
+	start = time.time()
+
 	path = Path(path)
 
 	if path.is_dir():
@@ -165,5 +169,8 @@ def transcode(path: Path, config, debug=False) -> Path:
 		"""TODO: decide to skip or delete the file"""
 		# path.unlink(missing_ok=True)
 		return path
+	
+	finally:
+		logger.info(f"Transcoding completed ({time.time() - start:.2f}s)")
 
 
