@@ -30,16 +30,6 @@ from utils.birdnet import birdnet_analyse
 logger = logging.getLogger(__name__)
 
 
-"""
-TODO:
-
-What should be done if there are no devices connected?
-
-Suggestion:
-	set_wakealarm(5)
-	halt()
-"""
-
 
 def halt():
 	"""Tell the OS to halt the system.
@@ -113,27 +103,12 @@ if __name__ == "__main__":
 
 	birdnet_analyse(data_dir, result_dir, config)
 	
-
-	silero = config.get("speech-removal", {})
-	if silero.get("enabled", False):
-		logger.info("Speech removal enabled")
-		start = time.time()
-		try:
-			processed = detect_and_mute(data_dir)
-			logger.info(f"Speech segments muted ({time.time() - start:.2f}s)")
-			for p, ts in processed.items():
-				logger.info(f"{Path(p).name}: {len(ts)} speech segments")
-		except Exception as e:
-			logger.error(f"Speech detection failed: {e}")
-	else:
-		logger.info("Speech removal disabled")
-	
-	
+	detect_and_mute(data_dir, config)
 	
 	transcode(data_dir, config)
 
 
-	# start web server if audiograbd was run with --serve-port <port> 
+	# start web server 
 	if args.serve_port:
 		server = threading.Thread(
 			target=serve, args=(upload_dir, args.serve_port),
@@ -157,17 +132,14 @@ if __name__ == "__main__":
 		if interval is None or interval < 0:
 			logger.warning(f"Invalid wake interval ({interval})")
 		else:
-			logger.info(f"Uptime: {time.time() - start_time:.2f} seconds")
 			logger.info(f"Next wake alarm scheduled in {interval} minute(s)")
 			set_wakealarm(interval)
 
 			# time to die
 			logger.info(f"Halting (uptime {time.time() - start_time:.2f}s)")
-			#halt()
+			halt()
 			exit(0)
 
 	
-	logger.info(f"Halting (uptime {time.time() - start_time:.2f}s)")
+	logger.info(f"Exiting (uptime {time.time() - start_time:.2f}s)")
 	exit(0)
-
-

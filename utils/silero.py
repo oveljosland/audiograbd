@@ -1,5 +1,6 @@
 import subprocess
 import logging
+import time
 from pathlib import Path
 from silero_vad import load_silero_vad, read_audio, get_speech_timestamps
 from utils.transcode import EXTENSIONS
@@ -68,7 +69,7 @@ def mute_segments(path: Path, timestamps):
 
 
 
-def detect_and_mute(path: Path, model=None):
+def _detect_and_mute(path: Path, config, model=None):
 	"""Detect speech segments in audio files and mute them."""
 	path = Path(path)
 	if model is None: # load model once
@@ -100,3 +101,21 @@ def detect_and_mute(path: Path, model=None):
 		# TODO: decide to skip or delete the file
 		# path.unlink(missing_ok=True)
 		return []
+
+
+
+
+def detect_and_mute(path, config):
+	mute = config.get("speech-removal", {})
+	if mute.get("enabled", False):
+		logger.info("Speech removal enabled")
+		start = time.time()
+		try:
+			processed = _detect_and_mute(path, config)
+			logger.info(f"Speech muted ({time.time() - start:.2f}s)")
+			for p, ts in processed.items():
+				logger.info(f"{Path(p).name}: {len(ts)} segments")
+		except Exception as e:
+			logger.error(f"Speech detection failed: {e}")
+	else:
+		logger.info("Speech removal disabled")
