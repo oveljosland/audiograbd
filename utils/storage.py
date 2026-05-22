@@ -75,7 +75,7 @@ class Sigma2Provider(StorageProvider):
 
 
 
-def upload(directory, config) -> None:
+def upload(path, config) -> None:
 	storage = config.get('storage', {})
 	provider = storage.get('provider')
 	start = time.time()
@@ -86,13 +86,13 @@ def upload(directory, config) -> None:
 				logger.error("GCS bucket name missing from config")
 			else:
 				gcs = GCSProvider(bucket_name)
-				gcs.upload(directory)
+				gcs.upload(path)
 		
 	elif provider == "sigma2":
 		username = storage.get('sigma2', {}).get('username')
 		port = storage.get('sigma2', {}).get('port')
 		sigma2 = Sigma2Provider()
-		sigma2.upload(directory)
+		sigma2.upload(path)
 	else:
 		logger.warning("No valid storage provider configured, skipping upload")
 
