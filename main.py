@@ -17,7 +17,7 @@ import threading
 from pathlib import Path
 
 from utils.logger import configure_logging
-from utils.wakealarm import set_wakealarm, disable_wakealarm
+from utils.wakealarm import schedule_wakealarm, set_wakealarm, disable_wakealarm
 from utils.device import transfer_from_all
 from utils.transcode import transcode
 from utils.config import load_config, load_backup
@@ -28,18 +28,6 @@ from utils.birdnet import birdnet_analyse
 
 
 logger = logging.getLogger(__name__)
-
-
-
-def halt():
-	"""Tell the OS to halt the system.
-	The `POWER_OFF_ON_HALT` EEPROM flag must be set to `1`.
-	"""
-	try:
-		subprocess.run(["systemctl", "halt"], check=True)
-	except Exception as e:
-		logger.error(f"failed to halt: {e}")
-
 
 
 def create_upload_dir(config):
@@ -64,7 +52,7 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser(
 		description=
-		"audiograbd - process and transmit data from wildlife recorders"
+		"audiograbd - process and transmit data from environmental recorders"
 	)
 	parser.add_argument(
 		'--serve-port', type=int, default=None, help="Serve processed files"
@@ -123,23 +111,8 @@ if __name__ == "__main__":
 
 
 	upload(upload_dir, config)
-	
-	
-	
-	scheduler = config.get('scheduler', {})
-	if scheduler.get('enabled'):
-		interval = scheduler.get('interval_minutes')
-		if interval is None or interval < 0:
-			logger.warning(f"Invalid wake interval ({interval})")
-		else:
-			logger.info(f"Next wake alarm scheduled in {interval} minute(s)")
-			set_wakealarm(interval)
 
-			# time to die
-			logger.info(f"Halting (uptime {time.time() - start_time:.2f}s)")
-			halt()
-			exit(0)
-
+	schedule_wakealarm(config, start_time)
 	
 	logger.info(f"Exiting (uptime {time.time() - start_time:.2f}s)")
 	exit(0)
