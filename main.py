@@ -17,7 +17,7 @@ import threading
 from pathlib import Path
 
 from utils.logger import configure_logging
-from utils.wakealarm import schedule_wakealarm, set_wakealarm, disable_wakealarm
+from utils.wakealarm import schedule_wakealarm, set_wakealarm, halt
 from utils.device import transfer_from_all
 from utils.transcode import transcode
 from utils.config import load_config, load_backup
@@ -66,8 +66,7 @@ if __name__ == "__main__":
 		
 	except RuntimeError as e:
 		logger.error(f"Failed to load config: {e}")
-		if config.get('scheduler', {}).get('enabled', False):
-			logger.info(f"Waking up in 10 minutes to try again...")
+		logger.info(f"Waking up in 10 minutes to try again...")
 		set_wakealarm(10)
 		halt()
 
@@ -79,15 +78,9 @@ if __name__ == "__main__":
 
 	project_name = config.get('project_name', 'audiograb')
 	configure_logging(config, file=logs_dir / f"{project_name}.log")
-	
 
-	try:
-		start = time.time()
-		moved = transfer_from_all(data_dir, copy=True) # copy=False when deployed
-		logger.info(f"Offloaded completed ({time.time() - start:.2f}s)")
-	except RuntimeError as e:
-		logger.error(f"Failed transfer to {upload_dir}: {e}")
 
+	transfer_from_all(data_dir, copy=False) # copy=True when testing
 
 	birdnet_analyse(data_dir, result_dir, config)
 	

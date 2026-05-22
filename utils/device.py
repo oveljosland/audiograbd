@@ -1,5 +1,4 @@
-import os
-import re
+import time
 import json
 import shutil
 import subprocess
@@ -154,7 +153,7 @@ def transfer(mount_points, destination, copy=False):
 
 
 
-def transfer_from_all(dst, copy=False):
+def _transfer_from_all(dst, copy=False):
 	"""Move all files from all removable devices to `dst`.
 	Files will be kept if copy is True.
 	Returns a list of the absolute destination paths.
@@ -186,3 +185,13 @@ def transfer_from_all(dst, copy=False):
 		logger.info(f"Moved {len(moved)} files")
 		
 	return moved
+
+
+
+def transfer_from_all(dst, copy=False):
+	try:
+		start = time.time()
+		_transfer_from_all(dst, copy=copy) # copy=False when deployed
+		logger.info(f"Offloaded completed ({time.time() - start:.2f}s)")
+	except RuntimeError as e:
+		logger.error(f"Failed transfer to {dst}: {e}")
