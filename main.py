@@ -111,16 +111,7 @@ if __name__ == "__main__":
 		logger.error(f"Failed transfer to {upload_dir}: {e}")
 
 
-	birdnet = config.get("birdnet", {})
-	if birdnet.get("enabled", False):
-		logger.info("birdnet-analyzer enabled")
-		try:
-			birdnet_analyse(data_dir, result_dir)
-
-		except Exception as e:
-			logger.error(f"birdnet-analyzer failed: {e}")
-	else:
-		logger.info("birdnet-analyzer disabled")
+	birdnet_analyse(data_dir, result_dir, config)
 	
 
 	silero = config.get("speech-removal", {})
