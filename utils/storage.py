@@ -87,13 +87,16 @@ def upload(path, config) -> None:
 			else:
 				gcs = GCSProvider(bucket_name)
 				gcs.upload(path)
+				logger.info(f"Upload completed ({time.time() - start:.2f}s)")
 		
 	elif provider == "sigma2":
 		username = storage.get('sigma2', {}).get('username')
 		port = storage.get('sigma2', {}).get('port')
 		sigma2 = Sigma2Provider()
 		sigma2.upload(path)
+		logger.info(f"Upload completed ({time.time() - start:.2f}s)")
+	
 	else:
 		logger.warning("No valid storage provider configured, skipping upload")
 
-	logger.info(f"Upload completed ({time.time() - start:.2f}s)")
+	
