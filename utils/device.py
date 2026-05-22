@@ -145,9 +145,9 @@ def transfer(mount_points, destination, copy=False):
 			target = destination_path / relative_path
 			target.parent.mkdir(parents=True, exist_ok=True)
 			if copy:
-				shutil.copy2(str(src_root), str(target))
+				shutil.copy2(str(src), str(target))
 			else:
-				shutil.move(str(src_root), str(target))
+				shutil.move(str(src), str(target))
 			moved_files.append(str(target.resolve()))
 
 	return moved_files
@@ -174,9 +174,9 @@ def transfer_from_all(dst, copy=False):
 		logger.info(f"Mount points for {device_path}: {mount_points}")
 
 		if copy:
-			logger.info(f"Copying data from to {dst}")
+			logger.info(f"Copying data to {dst}")
 		else:
-			logger.info(f"Moving data from to {dst}")
+			logger.info(f"Moving data to {dst}")
 
 		moved.extend(transfer(mount_points, dst, copy=copy))
 
